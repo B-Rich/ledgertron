@@ -12,21 +12,30 @@ def prefetch_refprops(entities, *props):
         prop.__set__(entity, ref_entities[ref_key])
     return entities
 
-class Account(db.Model):
-    user_id = db.IntegerProperty(required=True)
+class Profile(db.Model):
+    user_id = db.StringProperty()
     ledgers = db.ListProperty(db.Key)
     
+    #def __init__(self, user_id, **kwds):
+    #    self.user_id = user_id
+    #    super(Profile, self).__init__(key_name=user_id, **kwds)
+    
 class Ledger(db.Model):
-    title = db.StringProperty(required=True)
+    title = db.StringProperty()
+    
+    #def __init__(self, title, **kwds):
+    #    self.title = title
+    #    super(Ledger, self).__init__(**kwds)
     
     @property
-    def accounts(self):
-        return prefetch_refprops(Account.all().filter('ledgers', self.key()))
+    def profiles(self):
+        return Profile.all()#.filter('ledgers', self.key())
 
 class Transaction(db.Model):
     from_id = db.IntegerProperty(required=True)
     to_id = db.IntegerProperty(required=True)
     amount_cents = db.IntegerProperty(required=True)
+    date = db.DateTimeProperty(auto_now_add=True)
     
     @property
     def amount_string(self):

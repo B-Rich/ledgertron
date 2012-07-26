@@ -5,7 +5,7 @@
     <link type="text/css" rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-    {% for greeting in greetings %}
+<!--    {% for greeting in greetings %}
         {% if greeting.author %}
             <b>{{ greeting.author }}</b> wrote:
         {% else %}
@@ -19,7 +19,11 @@
       <div><input type="submit" value="Sign Guestbook"></div>
     </form>
   
-    <a href="{{ url }}">{{ url_linktext }}</a>
+    <a href="{{ url }}">{{ url_linktext }}</a>-->
+    {{ output }}
+    {% for ledger in ledgers %}
+        <p>::{{ ledger.user_id|escape }}</p>
+    {% endfor %}
 
 </body>
 </html>
