@@ -1,4 +1,5 @@
 from google.appengine.ext import db
+from google.appengine.api import users
 
 def prefetch_refprops(entities, *props):
     """Dereference Reference Properties to reduce Gets.
@@ -17,20 +18,29 @@ class Profile(db.Model):
     ledgers = db.ListProperty(db.Key)
     ledger_invites = db.ListProperty(db.Key)
     
-    #def __init__(self, user_id, **kwds):
-    #    self.user_id = user_id
-    #    super(Profile, self).__init__(key_name=user_id, **kwds)
+    @classmethod
+    def _get_profile_transaction(cls, user_id):
+        profile = cls.all().filter('user_id =', user_id).get()
+        if profile is None:
+            profile = cls(user_id=user_id)
+            profile.put()
+        return profile
+    
+    @classmethod
+    def from_user(cls, user):
+        return db.run_in_transaction(cls._get_profile_transaction, user.user_id())
     
 class Ledger(db.Model):
     title = db.StringProperty()
     
-    #def __init__(self, title, **kwds):
-    #    self.title = title
-    #    super(Ledger, self).__init__(**kwds)
+    def fetch_profiles(self, limit=500):
+        return Profile.all().filter('ledgers =', self).fetch(limit)
     
-    @property
-    def profiles(self):
-        return Profile.all()#.filter('ledgers', self.key())
+    def iter_users(self):
+        profiles = self.fetch_profiles()
+        prefetch_refprops(profiles, 'ledgers')
+        for profile in profiles:
+            yield users.User(_user_id=profile.user_id)
 
 class Transaction(db.Model):
     from_id = db.IntegerProperty(required=True)
@@ -38,6 +48,7 @@ class Transaction(db.Model):
     amount_cents = db.IntegerProperty(required=True)
     date = db.DateTimeProperty(auto_now_add=True)
     active = db.BooleanProperty(default=True)
+    notes = db.StringProperty()
     
     @property
     def amount_string(self):
