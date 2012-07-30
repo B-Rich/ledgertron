@@ -39,7 +39,6 @@ class MainPage(webapp2.RequestHandler):
         user = users.get_current_user()
         if user:
             profile = models.Profile.get_or_insert(user.user_id())
-            profile.user_id = user.user_id()
             profile.put()
             
             profile2 = models.Profile.get_by_key_name(user.user_id())

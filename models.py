@@ -15,6 +15,7 @@ def prefetch_refprops(entities, *props):
 class Profile(db.Model):
     user_id = db.StringProperty()
     ledgers = db.ListProperty(db.Key)
+    ledger_invites = db.ListProperty(db.Key)
     
     #def __init__(self, user_id, **kwds):
     #    self.user_id = user_id
@@ -36,6 +37,7 @@ class Transaction(db.Model):
     to_id = db.IntegerProperty(required=True)
     amount_cents = db.IntegerProperty(required=True)
     date = db.DateTimeProperty(auto_now_add=True)
+    active = db.BooleanProperty(default=True)
     
     @property
     def amount_string(self):
