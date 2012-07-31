@@ -35,14 +35,13 @@ class ProfilePage(Handler):
         user = users.get_current_user()
         profile = models.Profile.get_or_insert(user.user_id())
         
-        ledger = models.Ledger.get_or_insert('Ledge')
-        if ledger.key() not in profile.ledger_keys:
-            profile.append_ledger(ledger)
-            profile.put()
+        #ledger = models.Ledger(title='Ledger 1')
+        #ledger.put()
+        #models.LedgerParticipants(profile=profile, ledger=ledger).put()
         
         self.render('profile.html', {
             'user':user,
-            'ledgers':profile.ledgers
+            'ledgers':profile.ledgers()
         })
 
 

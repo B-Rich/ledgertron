@@ -1,3 +1,5 @@
+import functools
+
 from google.appengine.ext import db
 from google.appengine.api import users
 
@@ -13,42 +15,45 @@ def prefetch_refprops(entities, *props):
         prop.__set__(entity, ref_entities[ref_key])
     return entities
 
+def dereference_props(query, prop, attr, fetch_size=100):
+    entities = query.fetch(fetch_size)
+    prefetch_refprops(entities, prop)
+    return [getattr(entity, attr) for entity in entities]
+
 class Profile(db.Model):
-    ledger_keys = db.ListProperty(db.Key)
-    ledger_invite_keys = db.ListProperty(db.Key)
-    
-    def __init__(self, user_id, **kwargs):
-        super(Profile, self).__init__(key_name=user_id, **kwargs)
+    def __init__(self, *args, **kwargs):
+        if 'user_id' in kwargs:
+            kwargs['key_name'] = kwargs['user_id']
+            del kwargs['user_id']
+            
+        super(Profile, self).__init__(*args, **kwargs)
         
     @property
     def user_id(self):
         return self.key().name()
     
-    @property
     def ledgers(self):
-        return db.get(self.ledger_keys)
+        return dereference_props(self.ledger_set, LedgerParticipants.ledger, 'ledger')
     
-    @property
     def ledger_invites(self):
-        return db.get(self.ledger_invite_keys)
-    
-    def append_ledger(self, ledger):
-        self.ledger_keys.append(ledger.key())
-        
+        return dereference_props(self.invite_set, LedgerInvites.ledger, 'ledger')
     
 class Ledger(db.Model):
-    @property
-    def title(self):
-        return self.key().name()
+    title = db.StringProperty()
     
-    def fetch_profiles(self, limit=100):
-        return Profile.all().filter('ledgers =', self).fetch(limit)
+    def profiles(self):
+        return dereference_props(self.profile_set, LedgerParticipants.profile, 'profile')
     
-    def iter_users(self):
-        profiles = self.fetch_profiles()
-        prefetch_refprops(profiles, 'ledgers')
-        for profile in profiles:
-            yield users.User(_user_id=profile.user_id)
+    def profile_invites(self):
+        return dereference_props(self.invite_set, LedgerInvites.profile, 'profile')
+            
+class LedgerParticipants(db.Model):
+    profile = db.ReferenceProperty(Profile, collection_name='ledger_set')
+    ledger = db.ReferenceProperty(Ledger, collection_name='profile_set')
+    
+class LedgerInvites(db.Model):
+    profile = db.ReferenceProperty(Profile, collection_name='invite_set')
+    ledger = db.ReferenceProperty(Ledger, collection_name='invite_set')
 
 class Transaction(db.Model):
     from_id = db.IntegerProperty(required=True)

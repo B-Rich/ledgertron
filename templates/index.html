@@ -23,7 +23,7 @@
     <a href="{{ url }}">{{ url_linktext }}</a>-->
     {{ output }}
     {% for ledger in ledgers %}
-        <p>::{{ ledger.user_id|escape }}</p>
+        <p>::{{ ledger.key()|escape }}</p>
     {% endfor %}
 
 </body>
