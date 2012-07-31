@@ -6,25 +6,9 @@
     <link type="text/css" rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-<!--    {% for greeting in greetings %}
-        {% if greeting.author %}
-            <b>{{ greeting.author }}</b> wrote:
-        {% else %}
-            An anonymous person wrote:
-        {% endif %}
-        <blockquote>{{ greeting.content|escape }}</blockquote>
-    {% endfor %}
-  
-    <form action="/sign" method="post">
-      <div><textarea name="content" rows="3" cols="60"></textarea></div>
-      <div><input type="submit" value="Sign Guestbook"></div>
-    </form>
-  
-    <a href="{{ url }}">{{ url_linktext }}</a>-->
-    {{ output }}
-    {% for ledger in ledgers %}
-        <p>::{{ ledger.key()|escape }}</p>
-    {% endfor %}
+    <h1>Welcome to Ledgertron</h1>
+    <h2><a href="/profile">Profile</a></h2>
+    <h2><a href="{{ link_url }}">{{ link_text }}</a></h2>
 
 </body>
 </html>

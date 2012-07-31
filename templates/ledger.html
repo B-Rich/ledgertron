@@ -1,0 +1,23 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  
+    <h1>{{ ledger.title | escape}}</h1>
+    <h2>Participants</h2>
+    <ul>
+        {% for profile in profiles %}
+            <li>{{ profile.nickname() }}</li>
+        {% endfor %}
+    </ul>
+    <form action="/add_ledger_participant" method="post">
+        User's email: <input type="text" name="email" />
+        <input type="submit" value="Invite user" />
+    </form>
+
+</body>
+</html>

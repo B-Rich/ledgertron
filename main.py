@@ -23,12 +23,16 @@ class MainPage(Handler):
     def get(self):
         user = users.get_current_user()
         if user:
-            self.render('index.html')
+            link_text = 'log out'
+            link_url = users.create_logout_url(self.request.uri)
         else:
-            url = users.create_login_url(self.request.uri)
-            self.render('login.html', {
-                'url':url
-            })
+            link_text = 'log in'
+            link_url = users.create_login_url(self.request.uri)
+            
+        self.render('index.html', {
+            'link_text':link_text,
+            'link_url':link_url
+        })
             
 class ProfilePage(Handler):
     def get(self):
@@ -44,9 +48,28 @@ class ProfilePage(Handler):
             'ledgers':profile.ledgers()
         })
 
-
+class LedgerPage(Handler):
+    def get(self, name):
+        user = users.get_current_user()
+        profile = models.Profile.get_or_insert(user.user_id())
+        
+        ledger_title = name.replace('-', ' ')
+        
+        for l in profile.ledgers():
+            if l.title == ledger_title:
+                ledger = l
+                break
+        
+        self.render('ledger.html', {
+            'ledger':ledger,
+            'profiles':[users.User(_user_id=profile.user_id) for profile in ledger.profiles()]
+        })
+        
+        
+        
 app = webapp2.WSGIApplication([('/', MainPage),
-                               ('/profile', ProfilePage)],
+                               ('/profile', ProfilePage),
+                               webapp2.Route('/ledger/<name:[\w-]+>', LedgerPage)],
                               debug=True)
 
 '''

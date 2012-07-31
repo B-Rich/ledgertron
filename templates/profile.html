@@ -9,10 +9,15 @@
   
     <h1>{{ user.nickname() }}</h1>
     <div id="ledgers">
+        <h2>Your ledgers</h2>
+        <ul>
         {% for ledger in ledgers %}
-            <div class="ledger">:: {{ ledger.title | escape }}</div>
+            <li><a href="/ledger/{{ ledger.title | replace(' ', '-') }}">{{ ledger.title | escape }}</a></li>
         {% endfor %}
+        </ul>
     </div>
+    <div><a href="/create_ledger">Create new ledger</a></div>
+    
 
 </body>
 </html>
