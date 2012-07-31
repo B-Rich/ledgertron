@@ -14,26 +14,34 @@ def prefetch_refprops(entities, *props):
     return entities
 
 class Profile(db.Model):
-    user_id = db.StringProperty()
-    ledgers = db.ListProperty(db.Key)
-    ledger_invites = db.ListProperty(db.Key)
+    ledger_keys = db.ListProperty(db.Key)
+    ledger_invite_keys = db.ListProperty(db.Key)
     
-    @classmethod
-    def _get_profile_transaction(cls, user_id):
-        profile = cls.all().filter('user_id =', user_id).get()
-        if profile is None:
-            profile = cls(user_id=user_id)
-            profile.put()
-        return profile
+    def __init__(self, user_id, **kwargs):
+        super(Profile, self).__init__(key_name=user_id, **kwargs)
+        
+    @property
+    def user_id(self):
+        return self.key().name()
     
-    @classmethod
-    def from_user(cls, user):
-        return db.run_in_transaction(cls._get_profile_transaction, user.user_id())
+    @property
+    def ledgers(self):
+        return db.get(self.ledger_keys)
+    
+    @property
+    def ledger_invites(self):
+        return db.get(self.ledger_invite_keys)
+    
+    def append_ledger(self, ledger):
+        self.ledger_keys.append(ledger.key())
+        
     
 class Ledger(db.Model):
-    title = db.StringProperty()
+    @property
+    def title(self):
+        return self.key().name()
     
-    def fetch_profiles(self, limit=500):
+    def fetch_profiles(self, limit=100):
         return Profile.all().filter('ledgers =', self).fetch(limit)
     
     def iter_users(self):
