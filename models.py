@@ -21,10 +21,14 @@ def dereference_props(query, prop, attr, fetch_size=100):
     return [getattr(entity, attr) for entity in entities]
 
 class Profile(db.Model):
+    nickname = db.StringProperty()
+    
     def __init__(self, *args, **kwargs):
         if 'user_id' in kwargs:
             kwargs['key_name'] = kwargs['user_id']
             del kwargs['user_id']
+        if 'key_name' in kwargs:
+            kwargs['nickname'] = users.User(_user_id=kwargs['key_name']).nickname()
             
         super(Profile, self).__init__(*args, **kwargs)
         
@@ -35,7 +39,7 @@ class Profile(db.Model):
     def ledgers(self):
         return dereference_props(self.ledger_set, LedgerParticipants.ledger, 'ledger')
     
-    def ledger_invites(self):
+    def invite_ledgers(self):
         return dereference_props(self.invite_set, LedgerInvites.ledger, 'ledger')
     
 class Ledger(db.Model):
@@ -44,7 +48,7 @@ class Ledger(db.Model):
     def profiles(self):
         return dereference_props(self.profile_set, LedgerParticipants.profile, 'profile')
     
-    def profile_invites(self):
+    def invite_profiles(self):
         return dereference_props(self.invite_set, LedgerInvites.profile, 'profile')
             
 class LedgerParticipants(db.Model):

@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+    <h2>Enter information for your new ledger</h2>
+    <form action="/ledger/add/submit" method="post">
+        Title <input type="text" name="title" value="{{ title }}"/><br />
+        {% set invites=invites or ['', '', '', ''] %}
+        {% for invite in invites %}
+            User {{ loop.index }} (optional) <input type="text" name="invites" value="{{ invite }}"/><br />
+        {% endfor %}
+        
+        {% if error_text is defined %}
+        <div class="error">{{ error_text }}</div>
+        {% endif %}
+        
+        <input type="submit" value="Submit" />
+    </form>
+    
+
+</body>
+</html>

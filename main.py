@@ -4,6 +4,8 @@ import urllib
 import webapp2
 import os
 import jinja2
+import re
+import itertools as it
 
 from google.appengine.ext import db
 from google.appengine.api import users
@@ -15,9 +17,9 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
 class Handler(webapp2.RequestHandler):
-    def render(self, template, template_values):
+    def render(self, template, **kwargs):
         template = jinja_environment.get_template(template)
-        self.response.out.write(template.render(template_values))
+        self.response.out.write(template.render(**kwargs))
 
 class MainPage(Handler):
     def get(self):
@@ -29,24 +31,36 @@ class MainPage(Handler):
             link_text = 'log in'
             link_url = users.create_login_url(self.request.uri)
             
-        self.render('index.html', {
-            'link_text':link_text,
-            'link_url':link_url
-        })
+        self.render('index.html', 
+            link_text=link_text,
+            link_url=link_url)
             
 class ProfilePage(Handler):
     def get(self):
         user = users.get_current_user()
         profile = models.Profile.get_or_insert(user.user_id())
         
-        #ledger = models.Ledger(title='Ledger 1')
-        #ledger.put()
-        #models.LedgerParticipants(profile=profile, ledger=ledger).put()
+        self.render('profile.html', user=user, ledgers=profile.ledgers(), invites=profile.invite_ledgers())
         
-        self.render('profile.html', {
-            'user':user,
-            'ledgers':profile.ledgers()
-        })
+class InviteResponsePage(Handler):
+    def get(self, name, accepted):
+        # TODO: chenge this to a POST method, fix duplicated ledger participants
+        
+        ledger_title = name.replace('-', ' ')
+        
+        user = users.get_current_user()
+        profile = models.Profile.get_or_insert(user.user_id())
+        
+        models.prefetch_refprops(profile.invite_set, models.LedgerInvites.ledger)
+        for invite in profile.invite_set:
+            if invite.ledger.title == ledger_title:
+                if accepted in ['accepted', 'declined']:
+                    if accepted == 'accepted':
+                        models.LedgerParticipants(profile=profile, ledger=invite.ledger).put()
+                    invite.delete()
+                    return self.redirect_to('ledger', name=name)
+                
+        self.render('profile.html', user=user, ledgers=profile.ledgers(), invites=profile.invite_ledgers())
 
 class LedgerPage(Handler):
     def get(self, name):
@@ -60,17 +74,64 @@ class LedgerPage(Handler):
                 ledger = l
                 break
         
-        self.render('ledger.html', {
-            'ledger':ledger,
-            'profiles':[users.User(_user_id=profile.user_id) for profile in ledger.profiles()]
-        })
+        self.render('ledger.html', ledger=ledger,
+                    profiles=[users.User(_user_id=profile.user_id) for profile in ledger.profiles()])
         
+class NewLedgerPage(Handler):
+    title_validator = re.compile('\w[\w -]*\w')
+    def get(self):
+        self.render('add_ledger.html')
         
+    def post(self):
+        user = users.get_current_user()
+        profile = models.Profile.get_by_key_name(user.user_id())
+
+        title = self.request.get('title')
+        invites = self.request.get_all('invites')
+        
+        if title:
+            if title in (ledger.title for ledger in profile.ledgers()):
+                self.render('add_ledger.html', title=title, invites=invites,
+                            error_text='A ledger with that title already exists')
+            else:
+                invalid_invites = []
+                valid_invites = []
+                for address in it.ifilter(None, invites):
+                    result = models.Profile.all().filter('nickname =', address).get()
+                    if result:
+                        valid_invites.append(result)
+                    else:
+                        invalid_invites.append(address)
+                if invalid_invites:
+                    self.render('add_ledger.html', title=title, invites=invites,
+                            error_text='The following users do not exist: %s' % ', '.join(invalid_invites))
+                    return
+                
+                ledger = models.Ledger(title=title)
+                ledger.put()
+                
+                models.LedgerParticipants(profile=profile, ledger=ledger).put()
+                
+                for invite_profile in valid_invites:
+                    models.LedgerInvites(profile=invite_profile, ledger=ledger).put()
+                    
+                self.redirect_to('ledger', name=title.replace(' ', '-'))
+                
+                
+            
+        
+
         
 app = webapp2.WSGIApplication([('/', MainPage),
-                               ('/profile', ProfilePage),
-                               webapp2.Route('/ledger/<name:[\w-]+>', LedgerPage)],
+                               webapp2.Route('/profile', ProfilePage, name='profile'),
+                               webapp2.Route('/profile/<name>/<accepted>', InviteResponsePage),
+                               ('/ledger/add', NewLedgerPage),
+                               ('/ledger/add/submit', NewLedgerPage),
+                               webapp2.Route('/ledger/<name>', LedgerPage, 'ledger')],
                               debug=True)
+
+
+
 
 '''
 class Account(object):
