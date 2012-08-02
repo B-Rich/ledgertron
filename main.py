@@ -24,6 +24,10 @@ class Handler(webapp2.RequestHandler):
 class MainPage(Handler):
     def get(self):
         user = users.get_current_user()
+        if user is not None:
+            #we don't use the profile here, but still put it as soon as the user logs in
+            profile = models.Profile.get_or_insert(user.user_id())
+        
         if user:
             link_text = 'log out'
             link_url = users.create_logout_url(self.request.uri)
@@ -40,27 +44,26 @@ class ProfilePage(Handler):
         user = users.get_current_user()
         profile = models.Profile.get_or_insert(user.user_id())
         
-        self.render('profile.html', user=user, ledgers=profile.ledgers(), invites=profile.invite_ledgers())
+        self.render('profile.html', user=user, ledgers=profile.ledgers(), invite_ledgers=profile.invite_ledgers())
         
-class InviteResponsePage(Handler):
-    def get(self, name, accepted):
-        # TODO: chenge this to a POST method, fix duplicated ledger participants
-        
-        ledger_title = name.replace('-', ' ')
-        
+    def post(self):
         user = users.get_current_user()
         profile = models.Profile.get_or_insert(user.user_id())
         
-        models.prefetch_refprops(profile.invite_set, models.LedgerInvites.ledger)
-        for invite in profile.invite_set:
-            if invite.ledger.title == ledger_title:
-                if accepted in ['accepted', 'declined']:
-                    if accepted == 'accepted':
-                        models.LedgerParticipants(profile=profile, ledger=invite.ledger).put()
-                    invite.delete()
-                    return self.redirect_to('ledger', name=name)
-                
+        ledger_title = self.request.get('title')
+        accepted = self.request.get('accepted', None)
+        
+        if ledger_title and accepted is not None:
+                models.prefetch_refprops(profile.invite_set, models.LedgerInvites.ledger)
+                for invite in profile.invite_set:
+                    if invite.ledger.title == ledger_title:
+                            if accepted:
+                                models.LedgerParticipants(profile=profile, ledger=invite.ledger).put()
+                            invite.delete()
+                        
         self.render('profile.html', user=user, ledgers=profile.ledgers(), invites=profile.invite_ledgers())
+        
+        
 
 class LedgerPage(Handler):
     def get(self, name):
@@ -69,13 +72,13 @@ class LedgerPage(Handler):
         
         ledger_title = name.replace('-', ' ')
         
-        for l in profile.ledgers():
-            if l.title == ledger_title:
-                ledger = l
-                break
-        
-        self.render('ledger.html', ledger=ledger,
-                    profiles=[users.User(_user_id=profile.user_id) for profile in ledger.profiles()])
+        for ledger in profile.ledgers():
+            if ledger.title == ledger_title:
+                self.render('ledger.html', ledger=ledger, profiles=ledger.profiles(),
+                            transactions=models.Transaction.all().ancestor(ledger))
+                return
+        #TODO: make this a ledger not found page
+        self.render('ledger.html')
         
 class NewLedgerPage(Handler):
     title_validator = re.compile('\w[\w -]*\w')
@@ -124,7 +127,6 @@ class NewLedgerPage(Handler):
         
 app = webapp2.WSGIApplication([('/', MainPage),
                                webapp2.Route('/profile', ProfilePage, name='profile'),
-                               webapp2.Route('/profile/<name>/<accepted>', InviteResponsePage),
                                ('/ledger/add', NewLedgerPage),
                                ('/ledger/add/submit', NewLedgerPage),
                                webapp2.Route('/ledger/<name>', LedgerPage, 'ledger')],

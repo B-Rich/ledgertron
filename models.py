@@ -60,12 +60,12 @@ class LedgerInvites(db.Model):
     ledger = db.ReferenceProperty(Ledger, collection_name='invite_set')
 
 class Transaction(db.Model):
-    from_id = db.IntegerProperty(required=True)
-    to_id = db.IntegerProperty(required=True)
+    from_id = db.ReferenceProperty(Profile, required=True, collection_name='outgoing_transactions')
+    to_id = db.ReferenceProperty(Profile, required=True, collection_name='incoming_transactions')
     amount_cents = db.IntegerProperty(required=True)
     date = db.DateTimeProperty(auto_now_add=True)
     active = db.BooleanProperty(default=True)
-    notes = db.StringProperty()
+    notes = db.TextProperty()
     
     @property
     def amount_string(self):

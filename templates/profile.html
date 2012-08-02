@@ -8,6 +8,7 @@
 <body>
   
     <h1>{{ user.nickname() }}</h1>
+    
     <div id="ledgers">
         <h2>Your ledgers</h2>
         <ul>
@@ -19,18 +20,27 @@
     
     <a href="/ledger/add">Create new ledger</a>
     
-    {% if not invites | length is sameas 0 %}
+    {% if not invite_ledgers | length is sameas 0 %}
     <div id="invites">
         <h2>Pending ledger invites</h2>
         <ul>
-        {% for invite in invites %}
-            {% set link = invite.title | replace(' ', '-') %}
-            <li>{{ invite.title | escape }}<a href="/profile/{{ link }}/accepted">accept</a> <a href="/profile/{{ link }}/declined">decline</a></li>
+        {% for invite_ledger in invite_ledgers %}
+            <li>{{ invite_ledger.title | escape }}
+                <form action="/profile" method="post">
+                    <input type="hidden" name="accepted" value="True" />
+                    <input type="hidden" name="title" value="{{ invite_ledger.title }}" />
+                    <input type="submit" value="accept" />
+                </form>
+                <form action="/profile" method="post">
+                    <input type="hidden" name="accepted" value="" />
+                    <input type="hidden" name="title" value="{{ invite_ledger.title }}" />
+                    <input type="submit" value="declne" />
+                </form>
+            </li>
         {% endfor %}
         </ul>
     </div>
     {% endif %}
     
-
 </body>
 </html>

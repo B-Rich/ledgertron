@@ -6,18 +6,47 @@
     <link type="text/css" rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  
     <h1>{{ ledger.title | escape}}</h1>
-    <h2>Participants</h2>
-    <ul>
-        {% for profile in profiles %}
-            <li>{{ profile.nickname() }}</li>
+    <div id="participants">
+        <h2>Participants</h2>
+        <ul>
+            {% for profile in profiles %}
+                <li>{{ profile.nickname }}</li>
+            {% endfor %}
+        </ul>
+        <form action="/add_ledger_participant" method="post">
+            User's email: <input type="text" name="email" />
+            <input type="submit" value="Invite user" />
+        </form>
+    </div>
+    
+    <div id="transactions">
+        <form>
+        <table>
+            <tr><th>Date</th><th>From</th><th>To</th><th>Amount</th><th>Notes</th></tr>
+        {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.date }}</td>
+                <td>{{ transaction.from_id | escape }}</td>
+                <td>{{ transaction.to_id | escape }}</td>
+                <td>{{ transaction.amount_cents }}</td>
+                <td>{{transaction.notes }}</td>
+            </tr>
         {% endfor %}
-    </ul>
-    <form action="/add_ledger_participant" method="post">
-        User's email: <input type="text" name="email" />
-        <input type="submit" value="Invite user" />
-    </form>
+        
+            <tr>
+                <td></td>
+                <td><input type="text" name="from" /></td>
+                <td><input type="text" name="to" /></td>
+                <td><input type="text" name="amount" /></td>
+                <td>
+                    <input type="text" name="notes" />
+                    <input type="submit" value="Add transaction" />
+                </td>
+            </tr>
+        </table>
+        </form>
+    </div>
 
 </body>
 </html>
