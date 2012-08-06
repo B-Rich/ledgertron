@@ -6,47 +6,69 @@
     <link type="text/css" rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-    <h1>{{ ledger.title | escape}}</h1>
+    <h1>{{ ledger.title }}</h1>
     <div id="participants">
         <h2>Participants</h2>
         <ul>
-            {% for profile in profiles %}
-                <li>{{ profile.nickname }}</li>
+            {% for profile1 in participants %}
+                <li>{{ profile1.nickname }}</li>
             {% endfor %}
         </ul>
-        <form action="/add_ledger_participant" method="post">
-            User's email: <input type="text" name="email" />
+        <h2>Invites</h2>
+        <ul>
+            {% for profile2 in invites %}
+                <li>{{ profile2.nickname }}</li>
+            {% endfor %}
+        </ul>
+        <form action="/ledger/{{ ledger.title | replace(' ', '-') }}/invite" method="post">
+            User: <input type="text" name="nickname" />
             <input type="submit" value="Invite user" />
         </form>
     </div>
     
     <div id="transactions">
-        <form>
+        <form action="/ledger/{{ ledger.title | replace(' ', '-') }}/add" method="post">
         <table>
             <tr><th>Date</th><th>From</th><th>To</th><th>Amount</th><th>Notes</th></tr>
-        {% for transaction in transactions %}
+            {% for transaction in transactions %}
             <tr>
                 <td>{{ transaction.date }}</td>
-                <td>{{ transaction.from_id | escape }}</td>
-                <td>{{ transaction.to_id | escape }}</td>
-                <td>{{ transaction.amount_cents }}</td>
-                <td>{{transaction.notes }}</td>
+                <td>{{ transaction.from_profile.nickname }}</td>
+                <td>{{ transaction.to_profile.nickname }}</td>
+                <td>${{ transaction.amount_string }}</td>
+                <td>{{ transaction.notes }}</td>
             </tr>
-        {% endfor %}
-        
+            {% endfor %}
+            {% if not participants | length is sameas 1 %}
             <tr>
-                <td></td>
-                <td><input type="text" name="from" /></td>
-                <td><input type="text" name="to" /></td>
+                <td></td> <!--The date field is filled automatically-->
+                {% for name in ['from', 'to'] %}
+                <td>
+                    <select name="{{ name }}">
+                        {% for profile3 in participants %}
+                        <option value="{{ profile3.user_id }}">{{ profile3.nickname }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                {% endfor %}
                 <td><input type="text" name="amount" /></td>
                 <td>
                     <input type="text" name="notes" />
                     <input type="submit" value="Add transaction" />
                 </td>
             </tr>
+            {% endif %}
         </table>
         </form>
+        {% if error_text %}
+        <div class="error">{{ error_text }}</div>
+        {% endif %}
     </div>
+    
+    <div id="payments">
+        <h2>Pay it off:</h2>
+    </div>
+    
 
 </body>
 </html>

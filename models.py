@@ -45,7 +45,7 @@ class Profile(db.Model):
 class Ledger(db.Model):
     title = db.StringProperty()
     
-    def profiles(self):
+    def participant_profiles(self):
         return dereference_props(self.profile_set, LedgerParticipants.profile, 'profile')
     
     def invite_profiles(self):
@@ -60,8 +60,8 @@ class LedgerInvites(db.Model):
     ledger = db.ReferenceProperty(Ledger, collection_name='invite_set')
 
 class Transaction(db.Model):
-    from_id = db.ReferenceProperty(Profile, required=True, collection_name='outgoing_transactions')
-    to_id = db.ReferenceProperty(Profile, required=True, collection_name='incoming_transactions')
+    from_profile = db.ReferenceProperty(Profile, required=True, collection_name='outgoing_transactions')
+    to_profile = db.ReferenceProperty(Profile, required=True, collection_name='incoming_transactions')
     amount_cents = db.IntegerProperty(required=True)
     date = db.DateTimeProperty(auto_now_add=True)
     active = db.BooleanProperty(default=True)
@@ -69,4 +69,4 @@ class Transaction(db.Model):
     
     @property
     def amount_string(self):
-        return '%i.%02i' % (self.amount_cents / 100, n % 100)
+        return '%i.%02i' % (self.amount_cents / 100, self.amount_cents % 100)

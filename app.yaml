@@ -16,7 +16,7 @@ handlers:
   script: main.app
   login: required
   
-- url: /ledger/[\w-]+
+- url: /ledger/.+
   script: main.app
   login: required
 

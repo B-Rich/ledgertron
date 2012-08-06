@@ -5,6 +5,7 @@ import webapp2
 import os
 import jinja2
 import re
+import decimal
 import itertools as it
 
 from google.appengine.ext import db
@@ -13,8 +14,8 @@ from google.appengine.api import users
 import models
 
 
-jinja_environment = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
+jinja_environment = jinja2.Environment(autoescape=True, extensions=['jinja2.ext.autoescape'],
+        loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
 class Handler(webapp2.RequestHandler):
     def render(self, template, **kwargs):
@@ -63,22 +64,74 @@ class ProfilePage(Handler):
                         
         self.render('profile.html', user=user, ledgers=profile.ledgers(), invites=profile.invite_ledgers())
         
-        
 
 class LedgerPage(Handler):
-    def get(self, name):
+    def action(self, user, profile, ledger):
+        return ''
+    
+    def create_page(self, name):
         user = users.get_current_user()
         profile = models.Profile.get_or_insert(user.user_id())
-        
         ledger_title = name.replace('-', ' ')
         
         for ledger in profile.ledgers():
             if ledger.title == ledger_title:
-                self.render('ledger.html', ledger=ledger, profiles=ledger.profiles(),
-                            transactions=models.Transaction.all().ancestor(ledger))
+                error_text = self.action(user, profile, ledger)
+                
+                #TODO: finish the utils.py and call minimize_transactions here
+                
+                self.render('ledger.html', ledger=ledger,
+                            participants=ledger.participant_profiles(),
+                            invites=ledger.invite_profiles(),
+                            transactions=models.Transaction.all().ancestor(ledger),
+                            error_text=error_text)
                 return
-        #TODO: make this a ledger not found page
-        self.render('ledger.html')
+        #TODO: make this an actual page
+        self.response.out.write('Ledger not found')
+        
+    def get(self, name):
+        self.create_page(name)
+
+class LedgerInvitePage(LedgerPage):
+    def action(self, user, profile, ledger):
+        nickname = self.request.get('nickname').strip()
+        if nickname:
+            profile = models.Profile.all().filter('nickname =', nickname).get()
+            if profile:
+                models.LedgerInvites(profile=profile, ledger=ledger).put()
+                return ''
+        else:
+            return 'Invalid nickname'
+                
+    def post(self, name):
+        self.create_page(name)
+
+class LedgerAddPage(LedgerPage):
+    def action(self, user, profile, ledger):
+        participant_profiles = ledger.participant_profiles()
+        from_profile = models.Profile.get_by_key_name(self.request.get('from'))
+        to_profile = models.Profile.get_by_key_name(self.request.get('to'))
+        
+        if (from_profile and to_profile and
+            from_profile.key() != to_profile.key() and
+            any(from_profile.key() == p.key() for p in participant_profiles) and
+            any(to_profile.key() == p.key() for p in participant_profiles)):
+            try:
+                amount = decimal.Decimal(self.request.get('amount'))
+                if amount <= 0:
+                    raise TypeError
+            except (decimal.InvalidOperation, TypeError):
+                return 'Invalid transaction amount'
+            else:
+                models.Transaction(parent=ledger, from_profile=from_profile,
+                                   to_profile=to_profile, amount_cents=int(amount*100),
+                                   notes=self.request.get('notes')).put()
+        else:
+            return 'Invalid profile' #TODO: make this more descriptive
+            
+    def post(self, name):
+        self.create_page(name)
+        
         
 class NewLedgerPage(Handler):
     title_validator = re.compile('\w[\w -]*\w')
@@ -129,78 +182,8 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                webapp2.Route('/profile', ProfilePage, name='profile'),
                                ('/ledger/add', NewLedgerPage),
                                ('/ledger/add/submit', NewLedgerPage),
-                               webapp2.Route('/ledger/<name>', LedgerPage, 'ledger')],
+                               webapp2.Route('/ledger/<name>', LedgerPage, 'ledger'),
+                               webapp2.Route('/ledger/<name>/invite', LedgerInvitePage),
+                               webapp2.Route('/ledger/<name>/add', LedgerAddPage)],
                               debug=True)
 
-
-
-
-'''
-class Account(object):
-    def __init__(self, name, balance=0):
-        self.name = name
-        self.balance = balance
-        
-    def __repr__(self):
-        return '(%r, %r)' % (self.name, self.balance)
-
-a,b,c,d,e,f = 'abcdef'
-transactions = [
-    [b,a,5],
-    [b,c,20],
-    [d,e,2],
-    [d,f,1]
-]
-
-ledger = {l:0 for l in 'abcdef'}
-
-for t in transactions:
-    ledger[t[0]] += t[2]
-    ledger[t[1]] -= t[2]
-    
-creditors, debtors = [], []
-for k, v in ledger.iteritems():
-    if v > 0:
-        creditors.append(Account(k, v))
-    elif v < 0:
-        debtors.append(Account(k, v))
-        
-def pay_matching(d):
-    for c in creditors:
-        if d.balance + c.balance == 0:
-            print '%s -> %s $%s' % (d.name, c.name, -d.balance)
-            d.balance = c.balance = 0
-            return True
-    return False
-
-def pay_forward(d):
-    for d2 in debtors:
-        if d is not d2:
-            for c in creditors:
-                if d.balance + d2.balance + c.balance == 0:
-                    print '%s -> %s $%s' % (d.name, c.name, -d.balance)
-                    c.balance += d.balance
-                    d.balance = 0
-                    return True
-    return False
-
-def pay_any(d):
-    for c in creditors:
-        if c.balance > 0:
-            if -d.balance < c.balance:
-                print '%s -> %s $%s' % (d.name, c.name, -d.balance)
-                d.balance = c.balance = 0
-                return True
-            print '%s -> %s $%s' % (d.name, c.name, c.balance)
-            d.balance += c.balance
-            c.balance = 0
-        if d.balance == 0:
-            return True
-    return False
-
-for d in debtors:
-    if not pay_matching(d):
-        if not pay_forward(d):
-            if not pay_any(d):
-                raise RuntimeError('debtor balance is not paid')
-'''
