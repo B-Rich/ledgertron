@@ -8,16 +8,18 @@ import re
 import decimal
 import itertools as it
 
-from google.appengine.ext import db
 from google.appengine.api import users
 
 import models
-
+import utils
 
 jinja_environment = jinja2.Environment(autoescape=True, extensions=['jinja2.ext.autoescape'],
         loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
 class Handler(webapp2.RequestHandler):
+    def get_profile(self):
+        return  models.Profile.get_or_insert(users.get_current_user().user_id())
+    
     def render(self, template, **kwargs):
         template = jinja_environment.get_template(template)
         self.response.out.write(template.render(**kwargs))
@@ -27,7 +29,7 @@ class MainPage(Handler):
         user = users.get_current_user()
         if user is not None:
             #we don't use the profile here, but still put it as soon as the user logs in
-            profile = models.Profile.get_or_insert(user.user_id())
+            models.Profile.get_or_insert(user.user_id())
         
         if user:
             link_text = 'log out'
@@ -42,15 +44,18 @@ class MainPage(Handler):
             
 class ProfilePage(Handler):
     def get(self):
-        user = users.get_current_user()
-        profile = models.Profile.get_or_insert(user.user_id())
+        profile = self.get_profile()
+        self.render('profile.html', profile=profile, ledgers=profile.ledgers(), invite_ledgers=profile.invite_ledgers())
         
-        self.render('profile.html', user=user, ledgers=profile.ledgers(), invite_ledgers=profile.invite_ledgers())
-        
+class ProfileEditPage(Handler):
     def post(self):
-        user = users.get_current_user()
-        profile = models.Profile.get_or_insert(user.user_id())
+        profile = self.get_profile()
         
+        nickname = self.request.get('nickname')
+        if nickname:
+            profile.nickname = nickname
+            profile.put()
+            
         ledger_title = self.request.get('title')
         accepted = self.request.get('accepted', None)
         
@@ -61,29 +66,28 @@ class ProfilePage(Handler):
                             if accepted:
                                 models.LedgerParticipants(profile=profile, ledger=invite.ledger).put()
                             invite.delete()
-                        
-        self.render('profile.html', user=user, ledgers=profile.ledgers(), invites=profile.invite_ledgers())
         
+        self.redirect_to('profile')
 
 class LedgerPage(Handler):
-    def action(self, user, profile, ledger):
+    def action(self, profile, ledger):
         return ''
     
     def create_page(self, name):
-        user = users.get_current_user()
-        profile = models.Profile.get_or_insert(user.user_id())
+        profile = self.get_profile()
         ledger_title = name.replace('-', ' ')
         
         for ledger in profile.ledgers():
             if ledger.title == ledger_title:
-                error_text = self.action(user, profile, ledger)
-                
-                #TODO: finish the utils.py and call minimize_transactions here
+                error_text = self.action(profile, ledger)
+                transactions = models.Transaction.all().ancestor(ledger)
+                payments = utils.minimize_transactions(transactions)
                 
                 self.render('ledger.html', ledger=ledger,
                             participants=ledger.participant_profiles(),
                             invites=ledger.invite_profiles(),
-                            transactions=models.Transaction.all().ancestor(ledger),
+                            transactions=transactions,
+                            payments=payments,
                             error_text=error_text)
                 return
         #TODO: make this an actual page
@@ -93,12 +97,12 @@ class LedgerPage(Handler):
         self.create_page(name)
 
 class LedgerInvitePage(LedgerPage):
-    def action(self, user, profile, ledger):
+    def action(self, profile, ledger):
         nickname = self.request.get('nickname').strip()
         if nickname:
-            profile = models.Profile.all().filter('nickname =', nickname).get()
-            if profile:
-                models.LedgerInvites(profile=profile, ledger=ledger).put()
+            invite_profile = models.Profile.all().filter('nickname =', nickname).get()
+            if invite_profile:
+                models.LedgerInvites(profile=invite_profile, ledger=ledger).put()
                 return ''
         else:
             return 'Invalid nickname'
@@ -107,7 +111,7 @@ class LedgerInvitePage(LedgerPage):
         self.create_page(name)
 
 class LedgerAddPage(LedgerPage):
-    def action(self, user, profile, ledger):
+    def action(self, profile, ledger):
         participant_profiles = ledger.participant_profiles()
         from_profile = models.Profile.get_by_key_name(self.request.get('from'))
         to_profile = models.Profile.get_by_key_name(self.request.get('to'))
@@ -139,8 +143,7 @@ class NewLedgerPage(Handler):
         self.render('add_ledger.html')
         
     def post(self):
-        user = users.get_current_user()
-        profile = models.Profile.get_by_key_name(user.user_id())
+        profile = self.get_profile()
 
         title = self.request.get('title')
         invites = self.request.get_all('invites')
@@ -172,14 +175,12 @@ class NewLedgerPage(Handler):
                     models.LedgerInvites(profile=invite_profile, ledger=ledger).put()
                     
                 self.redirect_to('ledger', name=title.replace(' ', '-'))
-                
-                
-            
-        
 
-        
+
+
 app = webapp2.WSGIApplication([('/', MainPage),
                                webapp2.Route('/profile', ProfilePage, name='profile'),
+                               ('/profile/edit', ProfileEditPage),
                                ('/ledger/add', NewLedgerPage),
                                ('/ledger/add/submit', NewLedgerPage),
                                webapp2.Route('/ledger/<name>', LedgerPage, 'ledger'),

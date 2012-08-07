@@ -10,15 +10,19 @@
     <div id="participants">
         <h2>Participants</h2>
         <ul>
-            {% for profile1 in participants %}
-                <li>{{ profile1.nickname }}</li>
+            {% for profile in participants %}
+                <li>{{ profile.nickname }}</li>
             {% endfor %}
         </ul>
         <h2>Invites</h2>
         <ul>
-            {% for profile2 in invites %}
-                <li>{{ profile2.nickname }}</li>
-            {% endfor %}
+            {% if invites %}
+                {% for profile in invites %}
+                    <li>{{ profile.nickname }}</li>
+                {% endfor %}
+            {% else %}
+                There are no invites pending
+            {% endif %}
         </ul>
         <form action="/ledger/{{ ledger.title | replace(' ', '-') }}/invite" method="post">
             User: <input type="text" name="nickname" />
@@ -45,8 +49,8 @@
                 {% for name in ['from', 'to'] %}
                 <td>
                     <select name="{{ name }}">
-                        {% for profile3 in participants %}
-                        <option value="{{ profile3.user_id }}">{{ profile3.nickname }}</option>
+                        {% for profile in participants %}
+                        <option value="{{ profile.user_id }}">{{ profile.nickname }}</option>
                         {% endfor %}
                     </select>
                 </td>
@@ -67,6 +71,16 @@
     
     <div id="payments">
         <h2>Pay it off:</h2>
+        <table>
+            <tr><th>From</th><th>To</th><th>Amount</th></tr>
+            {% for payment in payments %}
+            <tr>
+                <td>{{ payment.from_profile.nickname }}</td>
+                <td>{{ payment.to_profile.nickname }}</td>
+                <td>${{ payment.amount_string }}</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
     
 

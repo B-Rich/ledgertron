@@ -7,8 +7,12 @@
 </head>
 <body>
   
-    <h1>{{ user.nickname() }}</h1>
-    
+    <h1>{{ profile.nickname }}</h1>
+    Change name:
+    <form action="/profile/edit" method="post">
+        <input type="text" name="nickname" />
+        <input type="submit" value="accept" />
+    </form>
     <div id="ledgers">
         <h2>Your ledgers</h2>
         <ul>
@@ -26,12 +30,12 @@
         <ul>
         {% for invite_ledger in invite_ledgers %}
             <li>{{ invite_ledger.title | escape }}
-                <form action="/profile" method="post">
+                <form action="/profile/edit" method="post">
                     <input type="hidden" name="accepted" value="True" />
                     <input type="hidden" name="title" value="{{ invite_ledger.title }}" />
                     <input type="submit" value="accept" />
                 </form>
-                <form action="/profile" method="post">
+                <form action="/profile/edit" method="post">
                     <input type="hidden" name="accepted" value="" />
                     <input type="hidden" name="title" value="{{ invite_ledger.title }}" />
                     <input type="submit" value="declne" />

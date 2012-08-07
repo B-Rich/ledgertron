@@ -70,3 +70,8 @@ class Transaction(db.Model):
     @property
     def amount_string(self):
         return '%i.%02i' % (self.amount_cents / 100, self.amount_cents % 100)
+    
+    def __repr__(self):
+        return '<Transaction(from_profile=%r, to_profile=%r, amount=%s)>' % (self.from_profile.nickname,
+                                                                           self.to_profile.nickname,
+                                                                           self.amount_string)

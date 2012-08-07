@@ -1,58 +1,76 @@
-class _Account(object):
-    def __init__(self, name, balance=0):
-        self.name = name
-        self.balance = balance
+import models
 
-def _pay_matching(d):
+def _pay_matching(debtors, creditors, d):
+    '''Try to pay off two balances at the same time.'''
+    transactions = []
     for c in creditors:
-        if d.balance + c.balance == 0:
-            print '%s -> %s $%s' % (d.name, c.name, -d.balance)
-            d.balance = c.balance = 0
-            return True
-    return False
+        if debtors[d] + creditors[c] == 0:
+            transactions.append(models.Transaction(from_profile=d,
+                                                   to_profile=c,
+                                                   amount_cents=-debtors[d]))
+            debtors[d] = creditors[c] = 0
+            return transactions
+    return transactions
 
-def _pay_forward(d):
-    for d2 in debtors:
-        if d is not d2:
+def _pay_forward(debtors, creditors, d):
+    '''Try to pay off one balance now, and set up the creditor to be paid off fully in the next transaction.'''
+    transactions = []
+    for other_debtor in debtors:
+        if d is not other_debtor:
             for c in creditors:
-                if d.balance + d2.balance + c.balance == 0:
-                    print '%s -> %s $%s' % (d.name, c.name, -d.balance)
-                    c.balance += d.balance
-                    d.balance = 0
-                    return True
-    return False
+                if debtors[d] + debtors[other_debtor] + creditors[c] == 0:
+                    transactions.append(models.Transaction(from_profile=d,
+                                                            to_profile=c,
+                                                            amount_cents=-debtors[d]))
+                    creditors[c] += debtors[d]
+                    debtors[d] = 0
+                    return transactions
+    return transactions
 
-def _pay_any(d):
+def _pay_any(debtors, creditors, d):
+    '''Make payments to as many creditors as necessary to fully pay off the debtor's debt'''
+    transactions = []
     for c in creditors:
-        if c.balance > 0:
-            if -d.balance < c.balance:
-                print '%s -> %s $%s' % (d.name, c.name, -d.balance)
-                d.balance = c.balance = 0
-                return True
-            print '%s -> %s $%s' % (d.name, c.name, c.balance)
-            d.balance += c.balance
-            c.balance = 0
-        if d.balance == 0:
-            return True
-    return False
+        if creditors[c] > 0:
+            if -debtors[d] < creditors[c]:
+                transactions.append(models.Transaction(from_profile=d,
+                                                        to_profile=c,
+                                                        amount_cents=-debtors[d]))
+                debtors[d] = creditors[c] = 0
+                return transactions
+            transactions.append(models.Transaction(from_profile=d,
+                                                    to_profile=c,
+                                                    amount_cents=creditors[c]))
+            debtors[d] += creditors[c]
+            creditors[c] = 0
+        if debtors[d] == 0:
+            return transactions
+    return transactions
 
 def minimize_transactions(transactions):
-    balances = {p.key():0 for p in ledger.participant_profiles()}
+    '''Take a list of Transaction objects and return the shortest list of Transactions the will pay off all debts.'''
+    
+    balances = {}
     # find the ending balance after all transactions complete
-    for t in models.Transaction.all().ancestor(ledger):
-        balances[t.to_profile.key()] += t.amount_cents
-        balances[t.from_profile.key()] -= t.amount_cents
+    for t in transactions:
+        balances[t.to_profile.key()] = balances.get(t.to_profile.key(), 0) - t.amount_cents
+        balances[t.from_profile.key()] = balances.get(t.from_profile.key(), 0) + t.amount_cents
         
     # separate the balances into positive and negative balances
-    creditors, debtors = [], []
+    creditors, debtors = {}, {}
     for k, v in balances.iteritems():
         if v > 0:
-            creditors.append([k, v])
+            creditors[k] = v
         if v < 0:
-            debtors.append([k, v])
+            debtors[k] = v
     
+    transactions = []
     for d in debtors:
-        if not _pay_matching(d):
-            if not _pay_forward(d):
-                if not _pay_any(d):
-                    raise RuntimeError('debtor balance is not paid')
+        for f in _pay_matching, _pay_forward, _pay_any:
+            transactions += f(debtors, creditors, d)
+            if debtors[d] == 0:
+                break
+        else:
+            RuntimeError('Debt not fully paid off')
+    
+    return transactions
