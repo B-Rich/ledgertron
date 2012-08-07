@@ -1,16 +1,1 @@
-body {
-  font-family: Verdana, Helvetica, sans-serif;
-  background-color: #DDDDDD;
-}
 
-.error {
-    color:red;
-}
-
-table {
-    border-collapse: collapse;
-}
-
-table, th, td {
-    border: 1px solid gray;
-}

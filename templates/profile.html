@@ -1,19 +1,13 @@
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <link type="text/css" rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-  
+{% extends "base.html" %}
+{% block body %}
     <h1>{{ profile.nickname }}</h1>
-    Change name:
-    <form action="/profile/edit" method="post">
-        <input type="text" name="nickname" />
-        <input type="submit" value="accept" />
+    <form class="well form-inline" action="/profile/edit" method="post">
+        <input type="text" class="input" placeholder="Change nickname" name="nickname" />
+        <button type="submit" class="btn">Change</button>
     </form>
-    <div id="ledgers">
+    
+    <div class="well">
         <h2>Your ledgers</h2>
         <ul>
         {% for ledger in ledgers %}
@@ -22,10 +16,10 @@
         </ul>
     </div>
     
-    <a href="/ledger/add">Create new ledger</a>
+    <a class="btn btn-primary btn-large" href="/ledger/add">Create new ledger</a>
     
     {% if not invite_ledgers | length is sameas 0 %}
-    <div id="invites">
+    <div class="well">
         <h2>Pending ledger invites</h2>
         <ul>
         {% for invite_ledger in invite_ledgers %}
@@ -46,5 +40,4 @@
     </div>
     {% endif %}
     
-</body>
-</html>
+{% endblock %}

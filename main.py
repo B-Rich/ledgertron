@@ -22,7 +22,14 @@ class Handler(webapp2.RequestHandler):
     
     def render(self, template, **kwargs):
         template = jinja_environment.get_template(template)
-        self.response.out.write(template.render(**kwargs))
+        user = users.get_current_user()
+        if user:
+            link_text = 'Log out'
+            link_url = users.create_logout_url(self.request.uri)
+        else:
+            link_text = 'Log in'
+            link_url = users.create_login_url(self.request.uri)
+        self.response.out.write(template.render(link_url=link_url, link_text=link_text, **kwargs))
 
 class MainPage(Handler):
     def get(self):
@@ -30,17 +37,8 @@ class MainPage(Handler):
         if user is not None:
             #we don't use the profile here, but still put it as soon as the user logs in
             models.Profile.get_or_insert(user.user_id())
-        
-        if user:
-            link_text = 'log out'
-            link_url = users.create_logout_url(self.request.uri)
-        else:
-            link_text = 'log in'
-            link_url = users.create_login_url(self.request.uri)
             
-        self.render('index.html', 
-            link_text=link_text,
-            link_url=link_url)
+        self.render('index.html')
             
 class ProfilePage(Handler):
     def get(self):

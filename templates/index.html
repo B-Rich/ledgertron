@@ -1,14 +1,9 @@
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <link type="text/css" rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-    <h1>Welcome to Ledgertron</h1>
-    <h2><a href="/profile">Profile</a></h2>
-    <h2><a href="{{ link_url }}">{{ link_text }}</a></h2>
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block body %}
+    <div class="hero-unit">
+        <h1>Welcome to Ledgertron</h1>
+        <p><a class="btn btn-primary btn-large" href="/profile">Profile</a></p>
+        <p><a class="btn btn-primary btn-large" href="{{ link_url }}">{{ link_text }}</a></p>
+    </div>
+{% endblock %}
