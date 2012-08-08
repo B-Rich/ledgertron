@@ -1,26 +1,35 @@
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <link type="text/css" rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-    <h2>Enter information for your new ledger</h2>
-    <form action="/ledger/add/submit" method="post">
-        Title <input type="text" name="title" value="{{ title }}"/><br />
-        {% set invites=invites or ['', '', '', ''] %}
-        {% for invite in invites %}
-            User {{ loop.index }} (optional) <input type="text" name="invites" value="{{ invite }}"/><br />
-        {% endfor %}
-        
-        {% if error_text is defined %}
-        <div class="error">{{ error_text }}</div>
-        {% endif %}
-        
-        <input type="submit" value="Submit" />
-    </form>
-    
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block body %}
+    <!--TODO: Inputs aren't sending any post data-->
+    <div class="container">
+        <div class="well">
+            <form class="form-horizontal" action="/ledger/add/submit" method="post">
+                <fieldset>
+                    <legend>Enter information for your new ledger</legend>
+                    <div class="control-group">
+                        <label class="control-label" for="input_title">Ledger Title</label>
+                        <div class="controls">
+                            <input type="text" class="input-xlarge" id="input_title" name="title" />
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="input_user_01">User</label>
+                        <div class="controls">
+                            <input type="text" class="input-xlarge" id="input_user_01" name="invites">
+                        </div>
+                    </div>
+                    {% if error_text %}
+                        <div style="color: red">
+                            {{ error_text }}
+                        </div>
+                    {% endif %}
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                        <a class="btn" href="/profile">Cancel</a>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+{% endblock %} 

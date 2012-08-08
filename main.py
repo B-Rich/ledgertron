@@ -173,6 +173,9 @@ class NewLedgerPage(Handler):
                     models.LedgerInvites(profile=invite_profile, ledger=ledger).put()
                     
                 self.redirect_to('ledger', name=title.replace(' ', '-'))
+        else:
+            self.render('add_ledger.html', title=title, invites=invites,
+                            error_text='Invalid title: %s' % title)
 
 
 

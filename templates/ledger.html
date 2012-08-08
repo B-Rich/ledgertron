@@ -1,11 +1,6 @@
 
-<!DOCTYPE html>
-
-<html>
-<head>
-    <link type="text/css" rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
+{% extends "base.html" %}
+{% block body %}
     <h1>{{ ledger.title }}</h1>
     <div id="participants">
         <h2>Participants</h2>
@@ -83,6 +78,4 @@
         </table>
     </div>
     
-
-</body>
-</html>
+{% endblock %}
