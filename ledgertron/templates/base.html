@@ -20,8 +20,6 @@
     <![endif]-->
 
     <link rel="shortcut icon" href="/favicon.ico">
-      
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
   </head>
 
     <body>
@@ -30,9 +28,24 @@
             <div class="navbar-inner">
                 <div class="container">
                     <a class="brand" href="/">Ledgertron</a>
-                    <div class="nav-collapse" style="float: right;">
-                        <ul class="nav">
+                    <div class="nav-collapse">
+                        <ul class="nav pull-right">
+                            {% if profile %}
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Ledgers<b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    {% for ledger in profile.ledgers() %}
+                                        <li>
+                                            <a href="/ledger/{{ ledger.title | replace(' ', '-') }}">
+                                                {{ ledger.title }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                            {% endif %}
                             <li><a href="/profile">Profile</a></li> <!--class="active"-->
+                            <li class="divider-vertical"></li>
                             <li><a href="{{ link_url }}">{{ link_text }}</a></li>
                         </ul>
                     </div><!--/.nav-collapse -->
@@ -47,6 +60,7 @@
         <!--  javascript
         ================================================== -->
         <!-- Placed at the end of the document so the pages load faster -->
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
         <script src="/static/js/bootstrap.js"></script>
     </body>
 </html>

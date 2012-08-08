@@ -1,81 +1,103 @@
 
 {% extends "base.html" %}
 {% block body %}
-    <h1>{{ ledger.title }}</h1>
-    <div id="participants">
-        <h2>Participants</h2>
-        <ul>
-            {% for profile in participants %}
-                <li>{{ profile.nickname }}</li>
-            {% endfor %}
-        </ul>
-        <h2>Invites</h2>
-        <ul>
-            {% if invites %}
-                {% for profile in invites %}
+    <div class="page-header">
+            <h1>{{ ledger.title }}</h1>
+    </div>
+    <div class="row">
+        <div class="well span6">
+            <h2>Participants</h2>
+            <ul>
+                {% for profile in participants %}
                     <li>{{ profile.nickname }}</li>
                 {% endfor %}
-            {% else %}
-                There are no invites pending
-            {% endif %}
-        </ul>
-        <form action="/ledger/{{ ledger.title | replace(' ', '-') }}/invite" method="post">
-            User: <input type="text" name="nickname" />
-            <input type="submit" value="Invite user" />
-        </form>
+            </ul>
+        </div>
+        <div class="well span6">
+            <h2>Invites</h2>
+            <ul>
+                {% if invites %}
+                    {% for profile in invites %}
+                        <li>{{ profile.nickname }}</li>
+                    {% endfor %}
+                {% else %}
+                    There are no invites pending
+                {% endif %}
+            </ul>
+            <form class="form-inline" action="/ledger/{{ ledger.title | replace(' ', '-') }}/invite" method="post">
+                <input type="text" placeholder="Invite someone?" name="nickname" />
+                <input class="btn" type="submit" value="Invite user" />
+            </form>
+            {% if error_text %}
+            <div style="color: red">{{ error_text }}</div>
+            {% endif %}  
+        </div>
     </div>
-    
-    <div id="transactions">
-        <form action="/ledger/{{ ledger.title | replace(' ', '-') }}/add" method="post">
-        <table>
-            <tr><th>Date</th><th>From</th><th>To</th><th>Amount</th><th>Notes</th></tr>
-            {% for transaction in transactions %}
-            <tr>
-                <td>{{ transaction.date }}</td>
-                <td>{{ transaction.from_profile.nickname }}</td>
-                <td>{{ transaction.to_profile.nickname }}</td>
-                <td>${{ transaction.amount_string }}</td>
-                <td>{{ transaction.notes }}</td>
-            </tr>
-            {% endfor %}
-            {% if not participants | length is sameas 1 %}
-            <tr>
-                <td></td> <!--The date field is filled automatically-->
-                {% for name in ['from', 'to'] %}
-                <td>
-                    <select name="{{ name }}">
-                        {% for profile in participants %}
-                        <option value="{{ profile.user_id }}">{{ profile.nickname }}</option>
+    <div class="row">
+        <div class="span12">
+            <h2>Transactions</h2>
+            <form action="/ledger/{{ ledger.title | replace(' ', '-') }}/add" method="post">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th><th>From</th><th>To</th><th>Amount</th><th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.date }}</td>
+                            <td>{{ transaction.from_profile.nickname }}</td>
+                            <td>{{ transaction.to_profile.nickname }}</td>
+                            <td>${{ transaction.amount_string }}</td>
+                            <td>{{ transaction.notes }}</td>
+                        </tr>
                         {% endfor %}
-                    </select>
-                </td>
-                {% endfor %}
-                <td><input type="text" name="amount" /></td>
-                <td>
-                    <input type="text" name="notes" />
-                    <input type="submit" value="Add transaction" />
-                </td>
-            </tr>
-            {% endif %}
-        </table>
-        </form>
-        {% if error_text %}
-        <div class="error">{{ error_text }}</div>
-        {% endif %}
+                        {% if not participants | length is sameas 1 %}
+                            <!--TODO: renable this with a better style-->
+<!--                    <tr>
+                        <td></td> 
+                        {% for name in ['from', 'to'] %}
+                        <td>
+                            <select name="{{ name }}">
+                                {% for profile in participants %}
+                                <option value="{{ profile.user_id }}">{{ profile.nickname }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        {% endfor %}
+                        <td><input type="text" name="amount" /></td>
+                        <td>
+                            <input type="text" name="notes" />
+                            <input type="submit" value="Add transaction" />
+                        </td>
+                    </tr>-->
+                    {% endif %}
+                    </tbody>
+                </table>
+            </form>
+        </div>
     </div>
-    
-    <div id="payments">
-        <h2>Pay it off:</h2>
-        <table>
-            <tr><th>From</th><th>To</th><th>Amount</th></tr>
-            {% for payment in payments %}
-            <tr>
-                <td>{{ payment.from_profile.nickname }}</td>
-                <td>{{ payment.to_profile.nickname }}</td>
-                <td>${{ payment.amount_string }}</td>
-            </tr>
-            {% endfor %}
-        </table>
+    <div class="row">
+        <div class="span12">
+            <h2>Pay it off</h2>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>From</th><th>To</th><th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.from_profile.nickname }}</td>
+                        <td>{{ payment.to_profile.nickname }}</td>
+                        <td>${{ payment.amount_string }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     
 {% endblock %}

@@ -86,6 +86,7 @@ class LedgerPage(Handler):
                             invites=ledger.invite_profiles(),
                             transactions=transactions,
                             payments=payments,
+                            profile=profile,
                             error_text=error_text)
                 return
         #TODO: make this an actual page
@@ -100,10 +101,14 @@ class LedgerInvitePage(LedgerPage):
         if nickname:
             invite_profile = models.Profile.all().filter('nickname =', nickname).get()
             if invite_profile:
+                if invite_profile.key() in [l.key() for l in ledger.participant_profiles()]:
+                    return 'That user is already a particiapnt.'
+                if invite_profile.key() in [l.key() for l in ledger.invite_profiles()]:
+                    return 'That user is already invited.'
                 models.LedgerInvites(profile=invite_profile, ledger=ledger).put()
                 return ''
-        else:
-            return 'Invalid nickname'
+            return "That user doesn't exist"
+        return '' #If the nickname field is blank, jsut pretend like they didn't click submit
                 
     def post(self, name):
         self.create_page(name)
@@ -148,7 +153,7 @@ class NewLedgerPage(Handler):
         
         if title:
             if title in (ledger.title for ledger in profile.ledgers()):
-                self.render('add_ledger.html', title=title, invites=invites,
+                self.render('add_ledger.html', title=title, invites=invites, profile=profile,
                             error_text='A ledger with that title already exists')
             else:
                 invalid_invites = []
@@ -160,7 +165,7 @@ class NewLedgerPage(Handler):
                     else:
                         invalid_invites.append(address)
                 if invalid_invites:
-                    self.render('add_ledger.html', title=title, invites=invites,
+                    self.render('add_ledger.html', title=title, invites=invites, profile=profile,
                             error_text='The following users do not exist: %s' % ', '.join(invalid_invites))
                     return
                 
@@ -174,8 +179,9 @@ class NewLedgerPage(Handler):
                     
                 self.redirect_to('ledger', name=title.replace(' ', '-'))
         else:
-            self.render('add_ledger.html', title=title, invites=invites,
-                            error_text='Invalid title: %s' % title)
+            self.render('add_ledger.html',
+                        title=title, invites=invites, profile=profile,
+                        error_text='Invalid title: %s' % title)
 
 
 

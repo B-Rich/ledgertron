@@ -14,9 +14,9 @@
             <li><a href="/ledger/{{ ledger.title | replace(' ', '-') }}">{{ ledger.title | escape }}</a></li>
         {% endfor %}
         </ul>
+        <a class="btn btn-primary btn-large" href="/ledger/add">Create new ledger</a>
     </div>
     
-    <a class="btn btn-primary btn-large" href="/ledger/add">Create new ledger</a>
     
     {% if not invite_ledgers | length is sameas 0 %}
     <div class="well">
