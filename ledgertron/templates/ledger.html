@@ -36,7 +36,7 @@
     <div class="row">
         <div class="span12">
             <h2>Transactions</h2>
-            <form action="/ledger/{{ ledger.title | replace(' ', '-') }}/add" method="post">
+            <form class="form-inline" action="/ledger/{{ ledger.title | replace(' ', '-') }}/add" method="post">
                 <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
@@ -55,23 +55,29 @@
                         {% endfor %}
                         {% if not participants | length is sameas 1 %}
                             <!--TODO: renable this with a better style-->
-<!--                    <tr>
-                        <td></td> 
+                    <tr>
+                        <td>
+                            <h4>Enter information &rarr;</h4>
+                        </td> 
                         {% for name in ['from', 'to'] %}
                         <td>
-                            <select name="{{ name }}">
+                            <select class="input-medium"  name="{{ name }}">
                                 {% for profile in participants %}
                                 <option value="{{ profile.user_id }}">{{ profile.nickname }}</option>
                                 {% endfor %}
                             </select>
                         </td>
                         {% endfor %}
-                        <td><input type="text" name="amount" /></td>
                         <td>
-                            <input type="text" name="notes" />
-                            <input type="submit" value="Add transaction" />
+                            <div class="input-prepend">
+                                <span class="add-on">$</span><input class="input-mini" type="number" min="0" step="0.01" name="amount" />
+                            </div>
                         </td>
-                    </tr>-->
+                        <td>
+                            <input class="input-medium" type="text" name="notes" />
+                            <input class="btn" type="submit" value="Submit" />
+                        </td>
+                    </tr>
                     {% endif %}
                     </tbody>
                 </table>
