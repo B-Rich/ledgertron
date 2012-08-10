@@ -1,7 +1,6 @@
 
-{% extends "base.html" %}
+{% extends "forms.html" %}
 {% block body %}
-    <!--TODO: Inputs aren't sending any post data-->
     <div class="container">
         <div class="well">
             <form class="form-horizontal" action="/ledger/add/submit" method="post">
@@ -10,7 +9,7 @@
                     <div class="control-group">
                         <label class="control-label" for="input_title">Ledger Title</label>
                         <div class="controls">
-                            <input type="text" class="input-xlarge" id="input_title" name="title" />
+                            <input type="text" class="input-xlarge" id="input_title" name="title" required />
                         </div>
                     </div>
                     <div class="control-group">

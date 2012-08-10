@@ -1,5 +1,5 @@
 
-{% extends "base.html" %}
+{% extends "forms.html" %}
 {% block body %}
     <div class="page-header">
             <h1>{{ ledger.title }}</h1>
@@ -25,7 +25,7 @@
                 {% endif %}
             </ul>
             <form class="form-inline" action="/ledger/{{ ledger.title | replace(' ', '-') }}/invite" method="post">
-                <input type="text" placeholder="Invite someone?" name="nickname" />
+                <input type="text" placeholder="Invite someone?" name="nickname" required />
                 <input class="btn" type="submit" value="Invite user" />
             </form>
             {% if error_text %}
@@ -46,15 +46,14 @@
                     <tbody>
                         {% for transaction in transactions %}
                         <tr>
-                            <td>{{ transaction.date }}</td>
+                            <td class="utc-date">{{ transaction.date }}</td>
                             <td>{{ transaction.from_profile.nickname }}</td>
                             <td>{{ transaction.to_profile.nickname }}</td>
                             <td>${{ transaction.amount_string }}</td>
                             <td>{{ transaction.notes }}</td>
                         </tr>
                         {% endfor %}
-                        {% if not participants | length is sameas 1 %}
-                            <!--TODO: renable this with a better style-->
+                    {% if not participants | length is sameas 1 %}
                     <tr>
                         <td>
                             <h4>Enter information &rarr;</h4>
@@ -70,17 +69,20 @@
                         {% endfor %}
                         <td>
                             <div class="input-prepend">
-                                <span class="add-on">$</span><input class="input-mini" type="number" min="0" step="0.01" name="amount" />
+                                <span class="add-on">$</span><input class="input-mini" type="number" min="0" step="0.01" name="amount" required/>
                             </div>
                         </td>
                         <td>
                             <input class="input-medium" type="text" name="notes" />
-                            <input class="btn" type="submit" value="Submit" />
                         </td>
                     </tr>
                     {% endif %}
                     </tbody>
                 </table>
+                {% if not participants | length is sameas 1 %}
+                <input class="btn" type="submit" value="Submit" />
+                {% endif %}
+
             </form>
         </div>
     </div>

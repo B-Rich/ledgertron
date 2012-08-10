@@ -25,10 +25,10 @@ class Handler(webapp2.RequestHandler):
         user = users.get_current_user()
         if user:
             link_text = 'Log out'
-            link_url = users.create_logout_url(self.request.uri)
+            link_url = users.create_logout_url('/')
         else:
             link_text = 'Log in'
-            link_url = users.create_login_url(self.request.uri)
+            link_url = '/profile'
         self.response.out.write(template.render(link_url=link_url, link_text=link_text, **kwargs))
 
 class MainPage(Handler):
