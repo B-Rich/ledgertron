@@ -35,9 +35,8 @@ class MainPage(Handler):
     def get(self):
         user = users.get_current_user()
         if user is not None:
-            #we don't use the profile here, but still put it as soon as the user logs in
-            models.Profile.get_or_insert(user.user_id())
-            
+            profile = models.Profile.get_or_insert(user.user_id())
+            return self.render('index.html', profile=profile)
         self.render('index.html')
             
 class ProfilePage(Handler):
@@ -77,7 +76,7 @@ class LedgerPage(Handler):
         
         for ledger in profile.ledgers():
             if ledger.title == ledger_title:
-                error_text = self.action(profile, ledger)
+                kwargs = self.action(profile, ledger) or {}
                 transactions = models.Transaction.all().ancestor(ledger)
                 payments = utils.minimize_transactions(transactions)
                 
@@ -87,7 +86,7 @@ class LedgerPage(Handler):
                             transactions=transactions,
                             payments=payments,
                             profile=profile,
-                            error_text=error_text)
+                            **kwargs)
                 return
         #TODO: make this an actual page
         self.response.out.write('Ledger not found')
@@ -98,6 +97,7 @@ class LedgerPage(Handler):
 class LedgerInvitePage(LedgerPage):
     def action(self, profile, ledger):
         nickname = self.request.get('nickname').strip()
+        #If the nickname field is blank, just pretend like they didn't click submit
         if nickname:
             invite_profile = models.Profile.all().filter('nickname =', nickname).get()
             if invite_profile:
@@ -106,9 +106,8 @@ class LedgerInvitePage(LedgerPage):
                 if invite_profile.key() in [l.key() for l in ledger.invite_profiles()]:
                     return 'That user is already invited.'
                 models.LedgerInvites(profile=invite_profile, ledger=ledger).put()
-                return ''
-            return "That user doesn't exist"
-        return '' #If the nickname field is blank, jsut pretend like they didn't click submit
+            else:
+                return {'invite_error':"That user doesn't exist"}
                 
     def post(self, name):
         self.create_page(name)
@@ -119,23 +118,50 @@ class LedgerAddPage(LedgerPage):
         from_profile = models.Profile.get_by_key_name(self.request.get('from'))
         to_profile = models.Profile.get_by_key_name(self.request.get('to'))
         
-        if (from_profile and to_profile and
-            from_profile.key() != to_profile.key() and
-            any(from_profile.key() == p.key() for p in participant_profiles) and
-            any(to_profile.key() == p.key() for p in participant_profiles)):
-            try:
-                amount = decimal.Decimal(self.request.get('amount'))
-                if amount <= 0:
-                    raise TypeError
-            except (decimal.InvalidOperation, TypeError):
-                return 'Invalid transaction amount'
-            else:
-                models.Transaction(parent=ledger, from_profile=from_profile,
-                                   to_profile=to_profile, amount_cents=int(amount*100),
-                                   notes=self.request.get('notes')).put()
+        if not (from_profile and to_profile):
+            return {'add_error':'User can not be found'}
+        if from_profile.key() == to_profile.key():
+            return {'add_error':'From and To profiles cannot be the same'}
+        if not (any(from_profile.key() == p.key() for p in participant_profiles) and
+                any(to_profile.key() == p.key() for p in participant_profiles)):
+            return {'add_error':'Profile is not a member of this ledger'}
+        try:
+            amount = decimal.Decimal(self.request.get('amount'))
+            if amount <= 0:
+                raise TypeError
+        except (decimal.InvalidOperation, TypeError):
+            return {'add_error':'Invalid transaction amount'}
         else:
-            return 'Invalid profile' #TODO: make this more descriptive
+            models.Transaction(parent=ledger, from_profile=from_profile,
+                               to_profile=to_profile, amount_cents=int(amount*100),
+                               notes=self.request.get('notes')).put()
             
+    def post(self, name):
+        self.create_page(name)
+        
+class LedgerBillPage(LedgerPage):
+    def action(self, profile, ledger):
+        participant_profiles = ledger.participant_profiles()
+        to_profile = models.Profile.get_by_key_name(self.request.get('to'))
+        
+        if not to_profile:
+            return {'bill_error':'Invalid profile'}
+        if not any(to_profile.key() == p.key() for p in participant_profiles):
+            return {'bill_error':'Profile is not a member of this ledger'}
+        try:
+            amount = decimal.Decimal(self.request.get('amount'))
+            if amount <= 0:
+                raise TypeError
+        except (decimal.InvalidOperation, TypeError):
+            return {'bill_error':'Invalid transaction amount'}
+        else:
+            amount_cents = int(amount * 100 / len(participant_profiles))
+            for from_profile in participant_profiles:
+                if from_profile.key() != to_profile.key():
+                    models.Transaction(parent=ledger, from_profile=from_profile,
+                                       to_profile=to_profile, amount_cents=amount_cents,
+                                       notes=self.request.get('notes')).put()
+        
     def post(self, name):
         self.create_page(name)
         
@@ -184,7 +210,6 @@ class NewLedgerPage(Handler):
                         error_text='Invalid title: %s' % title)
 
 
-
 app = webapp2.WSGIApplication([('/', MainPage),
                                webapp2.Route('/profile', ProfilePage, name='profile'),
                                ('/profile/edit', ProfileEditPage),
@@ -192,6 +217,7 @@ app = webapp2.WSGIApplication([('/', MainPage),
                                ('/ledger/add/submit', NewLedgerPage),
                                webapp2.Route('/ledger/<name>', LedgerPage, 'ledger'),
                                webapp2.Route('/ledger/<name>/invite', LedgerInvitePage),
-                               webapp2.Route('/ledger/<name>/add', LedgerAddPage)],
+                               webapp2.Route('/ledger/<name>/add', LedgerAddPage),
+                               webapp2.Route('/ledger/<name>/bill', LedgerBillPage)],
                               debug=True)
 

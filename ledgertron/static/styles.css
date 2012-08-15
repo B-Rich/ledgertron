@@ -1,1 +1,11 @@
+.input-prepend .input-xlarge {
+    width: 243px;
+}
 
+select.input-xlarge {
+    width:278px;
+}
+
+.error-text {
+    color: rgb(185, 74, 72);
+}

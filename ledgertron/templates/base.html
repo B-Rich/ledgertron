@@ -21,9 +21,7 @@
 
     <link rel="shortcut icon" href="/favicon.ico">
   </head>
-
     <body>
-    
         <div class="navbar navbar-fixed-top">
             <div class="navbar-inner">
                 <div class="container">
@@ -43,9 +41,9 @@
                                     {% endfor %}
                                 </ul>
                             </li>
-                            {% endif %}
                             <li><a href="/profile">Profile</a></li> <!--class="active"-->
                             <li class="divider-vertical"></li>
+                            {% endif %}
                             <li><a href="{{ link_url }}">{{ link_text }}</a></li>
                         </ul>
                     </div><!--/.nav-collapse -->

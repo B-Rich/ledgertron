@@ -28,7 +28,6 @@ $(function () {
     }               
     $('form').each(function () {
         var form = $(this);
-                
         form
             .validator({
             })
@@ -54,5 +53,6 @@ $(function () {
                 });
                 return false;
             });
+            
     });
 });
