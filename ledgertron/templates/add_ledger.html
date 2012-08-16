@@ -13,9 +13,16 @@
                         </div>
                     </div>
                     <div class="control-group">
-                        <label class="control-label" for="input_user_01">User</label>
+                        <label class="control-label" for="input_user_01">Invite a user</label>
                         <div class="controls">
-                            <input type="text" class="input-xlarge" id="input_user_01" name="invites">
+                            <input type="text" class="input-xlarge" id="input_user_01" name="invites" placeholder="optional" />
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="input_user_02">Invite another user</label>
+                        <div class="controls">
+                            <input type="text" class="input-xlarge" id="input_user_02" name="invites" placeholder="optional">
+                            <p class="help-block">You can invite more users on the next page</p>
                         </div>
                     </div>
                     {% if error_text %}
