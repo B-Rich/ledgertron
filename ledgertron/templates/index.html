@@ -3,11 +3,26 @@
 {% block body %}
     <div class="hero-unit">
         <h1>Welcome to Ledgertron</h1>
-        <p>THRILL as you enter transactions into a ledger.</p>
-        <p>MARVEL at the elegent interface.</p>
-        <p>BASK in the efficiency of minimized repayments.</p>
+        <p>The simplest way to keep track of what you owe.</p>
         <p>
-            <a class="btn btn-primary btn-large" href="{{ link_url }}">{{ link_text }}</a>
+            <a class="btn btn-primary btn-large" href="{{ link_url }}">{{ link_text }} &raquo;</a>
         </p>
+    </div>
+    <div class="row">
+        <div class="span4">
+            <h2>THRILL</h2>
+            <p>as you enter transactions into a ledger.</p>
+            <img src="/static/img/transaction.png" />
+        </div>
+        <div class="span4">
+            <h2>MARVEL</h2>
+            <p>at the elegent interface.</p>
+            <img src="/static/img/interface.png" />
+        </div>
+        <div class="span4">
+            <h2>BASK</h2>
+            <p>in the efficiency of minimized repayments.</p>
+            <img src="/static/img/payments.png" />
+        </div>
     </div>
 {% endblock %}

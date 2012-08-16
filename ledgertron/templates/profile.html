@@ -14,7 +14,7 @@
             <li><a href="/ledger/{{ ledger.title | replace(' ', '-') }}">{{ ledger.title | escape }}</a></li>
         {% endfor %}
         </ul>
-        <a class="btn btn-primary btn-large" href="/ledger/add">Create new ledger</a>
+        <a class="btn btn-primary" href="/ledger/add">Create new ledger</a>
     </div>
     
     
@@ -23,21 +23,21 @@
         <h2>Pending ledger invites</h2>
         <ul>
         {% for invite_ledger in invite_ledgers %}
-            <li>{{ invite_ledger.title | escape }}
-                <form action="/profile/edit" method="post">
-                    <input type="hidden" name="accepted" value="True" />
+            <li>
+                <form class="form-inline" action="/profile/edit" method="post">
+                    <label>{{ invite_ledger.title | escape }}</label>
                     <input type="hidden" name="title" value="{{ invite_ledger.title }}" />
-                    <input type="submit" value="accept" />
-                </form>
-                <form action="/profile/edit" method="post">
-                    <input type="hidden" name="accepted" value="" />
-                    <input type="hidden" name="title" value="{{ invite_ledger.title }}" />
-                    <input type="submit" value="declne" />
+                    <input class="btn" type="submit" value="accept" name="accept" />
+                    <input class="btn" type="submit" value="decline" name="decline" />
                 </form>
             </li>
         {% endfor %}
         </ul>
+        
+            
     </div>
     {% endif %}
-    
+    {% if error_text %}
+        <div class="error-text">{{ error_text }}</div>
+    {% endif %}
 {% endblock %}

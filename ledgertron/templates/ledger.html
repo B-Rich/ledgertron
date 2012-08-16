@@ -62,7 +62,7 @@
         <form class="form-horizontal" action="/ledger/{{ ledger.title | replace(' ', '-') }}/add" method="post">
             <fieldset>
                 <legend>Add a payment</legend>
-                    {% for name in ['from', 'to'] %}
+                    {% for name in ['debtor', 'creditor'] %}
                     <div class="control-group">
                         <label class="control-label" for="{{ name }}_input">{{ name | capitalize }}</label>
                         <div class="controls">
@@ -104,7 +104,7 @@
                     <div class="control-group">
                         <label class="control-label" for="to_input">Who paid the bill?</label>
                         <div class="controls">
-                            <select class="input-xlarge"  name="to" id="to_input">
+                            <select class="input-xlarge" name="from" id="from_input">
                                 {% for profile in participants %}
                                 <option value="{{ profile.user_id }}">{{ profile.nickname }}</option>
                                 {% endfor %}

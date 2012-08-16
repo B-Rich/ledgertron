@@ -53,14 +53,17 @@ class ProfileEditPage(Handler):
             profile.nickname = nickname
             profile.put()
             
-        ledger_title = self.request.get('title')
-        accepted = self.request.get('accepted', None)
         
-        if ledger_title and accepted is not None:
+        ledger_title = self.request.get('title')
+        clicked_btn = self.request.get('accept', None)
+        if clicked_btn is None:
+            clicked_btn = self.request.get('decline', None)
+        
+        if ledger_title and clicked_btn in ('accept', 'decline'):
                 models.prefetch_refprops(profile.invite_set, models.LedgerInvites.ledger)
                 for invite in profile.invite_set:
                     if invite.ledger.title == ledger_title:
-                            if accepted:
+                            if clicked_btn == 'accept':
                                 models.LedgerParticipants(profile=profile, ledger=invite.ledger).put()
                             invite.delete()
         
@@ -102,9 +105,9 @@ class LedgerInvitePage(LedgerPage):
             invite_profile = models.Profile.all().filter('nickname =', nickname).get()
             if invite_profile:
                 if invite_profile.key() in [l.key() for l in ledger.participant_profiles()]:
-                    return 'That user is already a particiapnt.'
+                    return {'invite_error:''That user is already a particiapnt.'}
                 if invite_profile.key() in [l.key() for l in ledger.invite_profiles()]:
-                    return 'That user is already invited.'
+                    return {'invite_error':'That user is already invited.'}
                 models.LedgerInvites(profile=invite_profile, ledger=ledger).put()
             else:
                 return {'invite_error':"That user doesn't exist"}
@@ -115,15 +118,15 @@ class LedgerInvitePage(LedgerPage):
 class LedgerAddPage(LedgerPage):
     def action(self, profile, ledger):
         participant_profiles = ledger.participant_profiles()
-        from_profile = models.Profile.get_by_key_name(self.request.get('from'))
-        to_profile = models.Profile.get_by_key_name(self.request.get('to'))
+        creditor_profile = models.Profile.get_by_key_name(self.request.get('creditor'))
+        debtor_profile = models.Profile.get_by_key_name(self.request.get('debtor'))
         
-        if not (from_profile and to_profile):
+        if not (creditor_profile and debtor_profile):
             return {'add_error':'User can not be found'}
-        if from_profile.key() == to_profile.key():
+        if creditor_profile.key() == debtor_profile.key():
             return {'add_error':'From and To profiles cannot be the same'}
-        if not (any(from_profile.key() == p.key() for p in participant_profiles) and
-                any(to_profile.key() == p.key() for p in participant_profiles)):
+        if not (any(creditor_profile.key() == p.key() for p in participant_profiles) and
+                any(debtor_profile.key() == p.key() for p in participant_profiles)):
             return {'add_error':'Profile is not a member of this ledger'}
         try:
             amount = decimal.Decimal(self.request.get('amount'))
@@ -132,8 +135,8 @@ class LedgerAddPage(LedgerPage):
         except (decimal.InvalidOperation, TypeError):
             return {'add_error':'Invalid transaction amount'}
         else:
-            models.Transaction(parent=ledger, from_profile=from_profile,
-                               to_profile=to_profile, amount_cents=int(amount*100),
+            models.Transaction(parent=ledger, from_profile=creditor_profile,
+                               to_profile=debtor_profile, amount_cents=int(amount*100),
                                notes=self.request.get('notes')).put()
             
     def post(self, name):
@@ -142,11 +145,11 @@ class LedgerAddPage(LedgerPage):
 class LedgerBillPage(LedgerPage):
     def action(self, profile, ledger):
         participant_profiles = ledger.participant_profiles()
-        to_profile = models.Profile.get_by_key_name(self.request.get('to'))
+        from_profile = models.Profile.get_by_key_name(self.request.get('from'))
         
-        if not to_profile:
+        if not from_profile:
             return {'bill_error':'Invalid profile'}
-        if not any(to_profile.key() == p.key() for p in participant_profiles):
+        if not any(from_profile.key() == p.key() for p in participant_profiles):
             return {'bill_error':'Profile is not a member of this ledger'}
         try:
             amount = decimal.Decimal(self.request.get('amount'))
@@ -156,7 +159,7 @@ class LedgerBillPage(LedgerPage):
             return {'bill_error':'Invalid transaction amount'}
         else:
             amount_cents = int(amount * 100 / len(participant_profiles))
-            for from_profile in participant_profiles:
+            for to_profile in participant_profiles:
                 if from_profile.key() != to_profile.key():
                     models.Transaction(parent=ledger, from_profile=from_profile,
                                        to_profile=to_profile, amount_cents=amount_cents,
