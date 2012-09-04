@@ -2,7 +2,7 @@
 
 Ledgertron is a Google App Engine program to keep track of debts between a small number of people.
 
-Visit ledgerton.appspot.com to use the program.
+Visit [ledgerton.appspot.com](ledgerton.appspot.com) to use the program.
 
 
 ##License
@@ -14,3 +14,9 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+##Developing
+* Install [Python 2.7](http://www.python.org/getit/)
+* Install the latest [App Engine SDK for Python](https://developers.google.com/appengine/downloads#Google_App_Engine_SDK_for_Python)
+* Run the Development App Server 
+    * On Windows or OSX, add the ledgertron/ledgertron folder to the App Engine Launcher
+    * On Linux, use [dev_appserver.py](https://developers.google.com/appengine/docs/python/tools/devserver)
